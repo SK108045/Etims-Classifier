@@ -20,11 +20,31 @@ HINTS=(
  (r"\badaptor\s+box\b|\bcable\s+clips?\b", "electrical hardware and supplies", "electrical"),
  (r"\b(araldyte|epoxy|bondex)\b", "chemical adhesives", "adhesive"),
  (r"\bnails?\b", "miscellaneous fasteners", "fastener"),
- (r"\bb(binding\s+wire)\b", "wire", "metal"),
+ (r"\bbinding\s+wire\b", "wire", "metal"),
  (r"\bball\s+valve\b|\bangle\s+valve\b|\bbib\s+tap\b", "valve", "plumbing"),
  (r"\bbasin\s+mixture\b|\bshower\b", "plumbing", "bathroom"),
 )
 HINTS=tuple((re.compile(p, re.I), term, context) for p,term,context in HINTS)
+
+# High-risk retail names for which this snapshot has no exact commodity.
+# Do not present unrelated substitutes such as ball bearings for ball valves.
+UNSUPPORTED = tuple(re.compile(p,re.I) for p in (
+    r"\b(ball\s+valve|angle\s+valve|bib\s+tap|ball\s+cork)\b",
+    r"\b(arabic\s+(flex|shower)|basin\s+mixture|basket\s+strainer)\b",
+    r"\b(bicycle\s+oil|binding\s+wire|boss\s+white|broom)\b",
+    r"\b(allan\s+keys|automatic\s+pump\s+control|asbesto\s+cable)\b",
+))
+# Some names unambiguously identify a product *family* but not a verified
+# KRA commodity. Restrict suggestions to plausible active codes only.
+FAMILY_CODES = tuple((re.compile(p,re.I), set(codes)) for p,codes in (
+    (r"\b(adaptor|adapter)\s+(socket|elbow|union)\b|\bbottle\s+traps?\b", ("40180000",)),
+    (r"\b(cable\s+(flex|single|t/e)|flex\s+cable)\b", ("26121629",)),
+    (r"\b(13a\s+.*socket|(?:[1-9]\s*)?gang\s+switch|bell\s+switch|bed\s+switch|adaptor\s+box|cable\s+clips?)\b",("39121700",)),
+    (r"\b(araldyte|epoxy|bondex)\b", ("31201601",)),
+    (r"\bnails?\b",("31162400",)),
+))
+NONDISCRIMINATING = {"black","red","green","grean","cross","metal","plastic",
+                      "white","handle","single","double","automatic","male","female"}
 
 def normalize(value: str) -> str:
     value=unicodedata.normalize("NFKC",str(value)).lower().replace("&"," and ")
@@ -71,6 +91,10 @@ class Classifier:
         normalized=normalize(original)
         if not normalized:
             return dict(product_name=original,status="no_candidate",top=[],reason="Empty product name")
+        if any(p.search(original) for p in UNSUPPORTED):
+            return dict(product_name=original,status="no_candidate",
+                        reason="No sufficiently specific active commodity for this product in the supplied catalog",top=[])
+        family=next((codes for pattern,codes in FAMILY_CODES if pattern.search(original)),None)
         remembered=self.memory.get(normalized)
         if remembered:
             row=self.catalog[remembered]
@@ -81,7 +105,13 @@ class Classifier:
         hint_terms=set().union(*(words(h) for h in hints)) if hints else set()
         candidates=[]
         for code,name,c_terms,norm_name in self.entries:
+            if family and code not in family:continue
+            if code.startswith("99") and normalized!=norm_name:continue
             direct=product_terms & c_terms
+            # Words like "metal", "cross" and "white" by themselves are not
+            # sufficient to associate an unknown retail item with a KRA class.
+            if not family and not hints and not (direct-NONDISCRIMINATING):
+                continue
             expanded=hint_terms & c_terms
             denom=sum(self.idf.get(w,1) for w in product_terms) or 1
             lexical=sum(self.idf.get(w,1) for w in direct)/denom
