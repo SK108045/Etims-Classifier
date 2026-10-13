@@ -1,0 +1,25 @@
+{
+  "note": "Illustrative shape transcribed from KRA 2026 Online Portal User Guide, NOT a live API response or full classification catalog",
+  "data": {
+    "itemClsList": [
+      {
+        "itemClsCd": "8411160300",
+        "itemClsNm": "Internal audits",
+        "itemClsLvl": 4,
+        "taxTyCd": "B"
+      },
+      {
+        "itemClsCd": "26121629",
+        "itemClsNm": "Power cable",
+        "itemClsLvl": 4,
+        "taxTyCd": ""
+      },
+      {
+        "itemClsCd": "39121700",
+        "itemClsNm": "Electrical hardware and supplies",
+        "itemClsLvl": 3,
+        "taxTyCd": ""
+      }
+    ]
+  }
+}
