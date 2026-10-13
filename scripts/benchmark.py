@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+from time import perf_counter
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
@@ -10,9 +11,11 @@ from classifier import Classifier,read_names,evaluate
 ROOT=Path(__file__).resolve().parents[1]
 
 def run(catalog,products,output,mappings=None,gold=None):
+    started=perf_counter()
     classifier=Classifier(catalog,mappings)
     names=read_names(products)
     results=[classifier.classify(name) for name in names]
+    processing_seconds=round(perf_counter()-started,3)
     output=Path(output)
     output.mkdir(parents=True,exist_ok=True)
     columns=["product_name","status","reason","query_hints"]
@@ -34,7 +37,7 @@ def run(catalog,products,output,mappings=None,gold=None):
             for r in results:
                 writer.writerow([r["product_name"],r["top"][0]["code"] if r["top"] else "","",""])
     summary=evaluate(results,gold)
-    summary.update(catalog_entries=len(classifier.catalog),catalog_sha256=classifier.catalog_sha256,
+    summary.update(processing_seconds=processing_seconds,catalog_entries=len(classifier.catalog),catalog_sha256=classifier.catalog_sha256,
                    source_catalog=str(catalog),input_file=str(products),
                    policy="All unverified model suggestions require review. Ranking scores are not probabilities.")
     (output/"metrics.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
