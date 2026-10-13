@@ -45,3 +45,32 @@ All unverified predictions remain **needs_review**. The engine abstains when the
 The code never creates tax invoices or changes any KRA/eTIMS records. It only studies a local catalog snapshot. The KRA desktop's **active ITEM_CLASS** codes remain authoritative when registering products; a correct external UNSPSC code can still be absent from the installed client. Classification, tax treatment and merchant SKU registration are separate concerns.
 
 Use a supported classification-master-data refresh where needed. Don't inject unsupported codes or force approximate categories. For real-client deployment, require an independently verified mapping and revalidate it against the merchant's active eTIMS code list before registration.
+
+
+## Verify predictions against a separate, authoritative KRA classification export
+
+KRA's official VSCU Specification v2.0, section 3.3.2.2 ItemCls, documents the classification endpoint **/itemClass/selectItemsClass**. It returns item class code (itemClsCd), name (itemClsNm), and level (itemClsLvl). The request contains a taxpayer PIN, branch ID, and last-request timestamp. The eTIMS Online Portal also provides an authenticated **Search item classification** interface.
+
+Official sources:
+- [KRA VSCU Specification](https://www.kra.go.ke/images/publications/VSCU_Specification_Document_v2.0.pdf)
+- [KRA Online Portal guide](https://www.kra.go.ke/images/publications/eTIMS-Onlineportal-User-guide-2024.pdf)
+- [2026 Online Portal guide](https://www.kra.go.ke/images/publications/NEW-Online-Portal-Userguide-2026.pdf)
+
+An actual current official KRA catalog export must be obtained through an authorized KRA interface or integration. This repository has **NO live authenticated KRA access**. The bundled CSV is a snapshot of an installed eTIMS client, not a fetched live public API. The tiny JSON response in tests/fixtures is strictly a format-test fixture, NOT a current full catalog.
+
+After obtaining an approved official JSON response (with an itemClsList list) or an official classification CSV, run:
+
+    python scripts/verify_kra.py --official-export "my_authorized_kra_classifications.json" --out reports/kra_check
+
+Outputs:
+- reports/kra_check/kra_validation.csv: per-product code, class name, catalog membership, product verification status.
+- reports/kra_check/kra_validation_summary.json: source SHA-256, category/code coverage, explicit warnings.
+
+**Code-and-name confirmed** means the separate KRA catalog recognizes the suggested code/name. It does not prove that your hardware-shop product belongs in that category. A product's actual correct class needs a documented independent reference/reviewer label. To measure accuracy against reviewed original product labels:
+
+    python scripts/verify_kra.py --official-export "my_authorized_kra_classifications.json" --gold reviewed_product_codes.csv --out reports/kra_check
+    python scripts/benchmark.py --gold reviewed_product_codes.csv --out reports
+
+The reviewer labels CSV needs two columns: product_name,correct_code. The correct code must be independently chosen from the official classes, not blindly copied from our suggested top-1. Real classification accuracy and precision are currently UNKNOWN.
+
+Security: **do not commit tax identifiers, seller credentials, personal data, or private raw API responses into this public GitHub repo**. Use sanitized classification-only exports where permitted.
