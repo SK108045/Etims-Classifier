@@ -6,7 +6,7 @@ from time import perf_counter
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
-from classifier import Classifier,read_names,evaluate
+from classifier import Classifier,read_names,evaluate,normalize
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -37,6 +37,12 @@ def run(catalog,products,output,mappings=None,gold=None):
             for r in results:
                 writer.writerow([r["product_name"],r["top"][0]["code"] if r["top"] else "","",""])
     summary=evaluate(results,gold)
+    distinct={}
+    for prediction in results:
+        distinct.setdefault(normalize(prediction["product_name"]),prediction)
+    summary["distinct_normalized_names"]=len(distinct)
+    summary["distinct_candidate_coverage"]=round(
+        sum(p["status"]!="no_candidate" for p in distinct.values())/max(1,len(distinct)),4)
     summary.update(processing_seconds=processing_seconds,catalog_entries=len(classifier.catalog),catalog_sha256=classifier.catalog_sha256,
                    source_catalog=str(catalog),input_file=str(products),
                    policy="All unverified model suggestions require review. Ranking scores are not probabilities.")
