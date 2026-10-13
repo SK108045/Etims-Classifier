@@ -41,6 +41,18 @@ class ClassifierTests(unittest.TestCase):
             self.assertEqual(m.classify("Workshop SKU")["status"],"verified_mapping")
             self.assertEqual(m.classify("Workshop SKU")["top"][0]["code"],"26121629")
             self.assertNotEqual(m.classify("Invalid SKU")["status"],"verified_mapping")
+    def test_no_ball_bearing_substitution_for_valve(self):
+        r=self.model.classify("Ball valve 1/2")
+        self.assertEqual(r["status"],"no_candidate")
+        self.assertFalse(r["top"])
+    def test_no_red_cross_or_oil_substitutions(self):
+        for product in ("Angle Valve - Cross","Bicycle oil","Arabic Shower - metal",
+                        "Boss White","Binding wire"):
+            r=self.model.classify(product)
+            self.assertEqual(r["status"],"no_candidate", product)
+            self.assertEqual(r["top"],[], product)
+    def test_real_product_count(self):
+        self.assertEqual(len(read_names(ROOT/"data/test_products.csv")),100)
     def test_ground_truth_evaluation(self):
         with tempfile.TemporaryDirectory() as d:
             path=Path(d)/"gold.csv"
