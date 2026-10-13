@@ -91,15 +91,15 @@ class Classifier:
         normalized=normalize(original)
         if not normalized:
             return dict(product_name=original,status="no_candidate",top=[],reason="Empty product name")
-        if any(p.search(original) for p in UNSUPPORTED):
-            return dict(product_name=original,status="no_candidate",
-                        reason="No sufficiently specific active commodity for this product in the supplied catalog",top=[])
-        family=next((codes for pattern,codes in FAMILY_CODES if pattern.search(original)),None)
         remembered=self.memory.get(normalized)
         if remembered:
             row=self.catalog[remembered]
             return dict(product_name=original,status="verified_mapping",reason="Reviewed mapping; validated against active catalog",
                         top=[dict(code=remembered,name=row["ITEM_CLS_NM"],score=1.0)])
+        if any(p.search(original) for p in UNSUPPORTED):
+            return dict(product_name=original,status="no_candidate",
+                        reason="No sufficiently specific active commodity for this product in the supplied catalog",top=[])
+        family=next((codes for pattern,codes in FAMILY_CODES if pattern.search(original)),None)
         hints=self._hints(original)
         product_terms=words(original)
         hint_terms=set().union(*(words(h) for h in hints)) if hints else set()
