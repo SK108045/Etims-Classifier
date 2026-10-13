@@ -17,7 +17,8 @@ HINTS=(
  (r"\b(adaptor|adapter)\s+(socket|elbow|union)\b|\bbottle\s+traps?\b", "tubes tubing and tube fittings", "plumbing fitting"),
  (r"\b(cable\s+(flex|single|t/e)|flex\s+cable|power\s+cable)\b", "power cable", "electrical"),
  (r"\b(13a\s+.*socket|(?:[1-9]\s*)?gang\s+switch|bell\s+switch|bed\s+switch)\b", "electrical hardware and supplies", "electrical"),
- (r"\badaptor\s+box\b|\bcable\s+clips?\b", "electrical hardware and supplies", "electrical"),
+ (r"\badaptor\s+box\b", "electrical boxes", "electrical"),
+ (r"\bcable\s+clips?\b", "electrical hardware and supplies", "electrical"),
  (r"\b(araldyte|epoxy|bondex)\b", "chemical adhesives", "adhesive"),
  (r"\bnails?\b", "miscellaneous fasteners", "fastener"),
  (r"\bbinding\s+wire\b", "wire", "metal"),
@@ -39,7 +40,8 @@ UNSUPPORTED = tuple(re.compile(p,re.I) for p in (
 FAMILY_CODES = tuple((re.compile(p,re.I), set(codes)) for p,codes in (
     (r"\b(adaptor|adapter)\s+(socket|elbow|union)\b|\bbottle\s+traps?\b", ("40180000",)),
     (r"\b(cable\s+(flex|single|t/e)|flex\s+cable)\b", ("26121629",)),
-    (r"\b(13a\s+.*socket|(?:[1-9]\s*)?gang\s+switch|bell\s+switch|bed\s+switch|adaptor\s+box|cable\s+clips?)\b",("39121700",)),
+    (r"\b(13a\s+.*socket|(?:[1-9]\s*)?gang\s+switch|bell\s+switch|bed\s+switch|cable\s+clips?)\b",("39121700",)),
+    (r"\badaptor\s+box\b",("39121303",)),
     (r"\b(araldyte|epoxy|bondex)\b", ("31201601",)),
     (r"\bnails?\b",("31162400",)),
 ))
