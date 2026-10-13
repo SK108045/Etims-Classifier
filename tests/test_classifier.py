@@ -21,6 +21,9 @@ class ClassifierTests(unittest.TestCase):
     def test_plumbing_socket_is_not_wall_socket(self):
         r=self.model.classify("Adaptor Socket 20x1/2 female")
         self.assertIn("40180000",[x["code"] for x in r["top"]])
+    def test_electrical_adapter_box_uses_specific_box_category(self):
+        r=self.model.classify("Adaptor box 100x100")
+        self.assertEqual(r["top"][0]["code"],"39121303")
     def test_no_off_catalog_codes_can_appear(self):
         for name in read_names(ROOT/"data/test_products.csv"):
             r=self.model.classify(name)
